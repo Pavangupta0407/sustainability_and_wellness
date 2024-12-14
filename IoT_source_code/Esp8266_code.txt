@@ -1,0 +1,96 @@
+#include <ESP8266WiFi.h>                 
+#include <FirebaseArduino.h>            
+
+#define FIREBASE_HOST "esp8266-9196f-default-rtdb.firebaseio.com"
+#define FIREBASE_AUTH "vR2SFFfwQBA2GfOOVTymsDS85oILLv1CEvkxphQY"
+#define WIFI_SSID "ESP12"
+#define WIFI_PASSWORD "password"    
+
+String nam;
+String age;
+String gender;
+String fireTemp;
+String fireEcg;
+String sensor_data;
+String dataIn;
+String path;
+int8_t in,ia,ig,it,ie,il;
+                                           
+void setup() 
+{
+  Serial.begin(115200);
+                                              
+               
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);                                  
+  Serial.print("Connecting to ");
+  Serial.print(WIFI_SSID);
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+ 
+  Serial.println();
+  Serial.print("Connected");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());                               //prints local IP address
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);                 // connect to the firebase
+ 
+}
+ 
+void loop() 
+{
+  
+  bool Sr =false;
+ 
+  while(Serial.available()){
+    
+        //get sensor data from serial put in sensor_data
+        sensor_data=Serial.readString(); 
+        Sr=true;    
+        
+    }
+  
+delay(1000);
+if(Sr==true){  
+
+  dataIn=sensor_data;
+  
+  in=dataIn.indexOf(",");
+  ia=dataIn.indexOf("-");
+  ig=dataIn.indexOf("+");
+  it=dataIn.indexOf("=");
+  ie=dataIn.indexOf("|");
+ 
+
+  nam = dataIn.substring(0,in);
+  age = dataIn.substring(in+1,ia);
+  gender = dataIn.substring(ia+1,ig);
+  fireTemp = dataIn.substring(ig+1,it);
+  fireEcg = dataIn.substring(it+1,ie);
+  
+  
+  Serial.print("ECG: ");  
+  Serial.print(fireEcg);
+  //String fireEcg = abc;                   //Humidity integer to string conversion
+  
+  Serial.print("   Temperature: ");  
+  Serial.print(fireTemp);  
+  Serial.println("°C");
+  //String fireTemp = strTemp + String("°C");                  //Temperature integer to string conversion
+  
+  //path="/DATA/"+nam+"/NAME";
+  Firebase.setString("/DATA/"+nam+"/NAME",nam);
+  Firebase.setString("/DATA/"+nam+"/AGE",age);
+  Firebase.setString("/DATA/"+nam+"/GENDER",gender);
+  Firebase.setString("/DATA/"+nam+"/TEMPERATURE",fireTemp);
+  Firebase.setString("/DATA/"+nam+"/ECG",fireEcg);
+    if (Firebase.failed()) 
+    {
+ 
+      Serial.print("pushing /logs failed:");
+      Serial.println(Firebase.error()); 
+      return;
+  }
+}
+  delay(3000);
+}
